@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+  <title>Delete Files</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background-color: #f5f7fb; padding: 20px; box-sizing: border-box; }
+    h2 { color: #003f7d; }
+    form { display: inline-block; margin: 2px 0; }
+    button { padding: 4px 10px; background-color: #ff6f61; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    button:hover { opacity: 0.9; }
+    .flash { margin-top: 10px; color: #ff6f61; }
+    .nav { margin-top: 15px; }
+    .nav a { margin-right: 10px; color: #003f7d; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h2>Delete files from your WINK directory</h2>
+
+  <div class="flash">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div>{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  {% if files %}
+    <p>Select a file to delete.</p>
+    <ul>
+      {% for f in files %}
+        <li>
+          {{ f }}
+          <form method="POST" style="display:inline;">
+            <input type="hidden" name="filename" value="{{ f }}" />
+            <button type="submit">Delete</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No files found in your directory.</p>
+  {% endif %}
+
+  <div class="nav">
+    <a href="{{ url_for('chat') }}">Back to WINK chat</a>
+    <a href="{{ url_for('upload_page') }}">Go to upload files</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <title>Upload Files</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background-color: #f5f7fb; padding: 20px; box-sizing: border-box; }
+    h2 { color: #003f7d; }
+    form { margin-bottom: 20px; }
+    input[type="file"] { margin-bottom: 10px; }
+    button { padding: 8px 14px; background-color: #003f7d; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { opacity: 0.9; }
+    .flash { margin-top: 10px; color: #ff6f61; }
+    .file-list { margin-top: 20px; }
+    .file-list ul { list-style: none; padding: 0; }
+    .file-list li { margin-bottom: 4px; }
+    .nav { margin-top: 15px; }
+    .nav a { margin-right: 10px; color: #003f7d; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h2>Upload files to your WINK directory</h2>
+
+  <form method="POST" enctype="multipart/form-data">
+    <input type="file" name="file" required />
+    <button type="submit">Upload</button>
+  </form>
+
+  <div class="flash">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div>{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <div class="file-list">
+    <h3>Your current files</h3>
+    {% if files %}
+      <ul>
+        {% for f in files %}
+          <li>{{ f }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No files uploaded yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="nav">
+    <a href="{{ url_for('chat') }}">Back to WINK chat</a>
+    <a href="{{ url_for('delete_page') }}">Go to delete files</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+  <title>Instructor Login</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background-color: #f5f7fb; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .card { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); width: 320px; box-sizing: border-box; }
+    h2 { margin-top: 0; color: #003f7d; }
+    label { font-size: 14px; display: block; margin-bottom: 6px; }
+    input { width: 100%; padding: 10px; font-size: 14px; border-radius: 4px; border: 1px solid #999; box-sizing: border-box; margin-bottom: 12px; }
+    button { width: 100%; padding: 10px; font-size: 15px; background-color: #003f7d; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { opacity: 0.9; }
+    .flash { margin-top: 10px; color: #ff6f61; font-size: 14px; }
+    .back-link { margin-top: 10px; display: block; text-align: center; font-size: 14px; color: #003f7d; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Instructor Login</h2>
+    <form method="POST">
+      <label for="email">UTEP email</label>
+      <input id="email" name="email" type="email" required />
+      <button type="submit">Log in</button>
+    </form>
+
+    <div class="flash">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <div>{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
+
+    <a href="{{ url_for('chat') }}" class="back-link">Back to WINK chat</a>
+  </div>
+</body>
+</html>

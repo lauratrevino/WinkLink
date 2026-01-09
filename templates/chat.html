@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+<head>
+  <title>WINK Chat</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background-color: #f5f7fb; display: flex; height: 100vh; }
+
+    .sidebar {
+      width: 260px;
+      background-color: #ffffff;
+      padding: 20px;
+      border-right: 2px solid #ccc;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .sidebar img {
+      width: 160px;
+      display: block;
+      margin: 0 auto 10px auto;
+    }
+
+    .sidebar h3 {
+      margin-top: 10px;
+      margin-bottom: 10px;
+      color: #003f7d;
+    }
+
+    .sidebar p {
+      font-size: 14px;
+      color: #444;
+    }
+
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .bubble-user {
+      background: #003f7d;
+      color: white;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      width: fit-content;
+      max-width: 70%;
+    }
+
+    .bubble-ai {
+      background: #ff6f61;
+      color: white;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      width: fit-content;
+      max-width: 70%;
+    }
+
+    .input-bar {
+      padding: 10px;
+      border-top: 2px solid #ccc;
+      display: flex;
+      box-sizing: border-box;
+    }
+
+    .input-bar input {
+      flex: 1;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #999;
+      box-sizing: border-box;
+    }
+
+    .input-bar button {
+      margin-left: 10px;
+      padding: 12px 18px;
+      font-size: 16px;
+      background-color: #003f7d;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .input-bar button:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="sidebar">
+    <img src="{{ url_for('static', filename='wink.png') }}" alt="WINK" />
+    <h3>WINK Assistant</h3>
+    <p>Welcome to the WINK chat test page.</p>
+  </div>
+
+  <div class="chat-container">
+
+    <div class="messages">
+      {% for msg in messages %}
+        {% if msg["sender"] == "user" %}
+          <div class="bubble-user">{{ msg["text"] }}</div>
+        {% else %}
+          <div class="bubble-ai">{{ msg["text"] }}</div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <form method="POST" class="input-bar">
+      <input name="prompt" placeholder="Ask WINK something..." autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
+
+  </div>
+
+</body>
+</html>
