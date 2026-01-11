@@ -1977,17 +1977,25 @@ TEMPLATE_WINK_CHAT = """
 def index():
     if request.method == "POST":
         email = _clean_email(request.form.get("email", ""))
+
         if not email:
             flash("Please enter a valid email address.")
             return render_template_string(TEMPLATE_LOGIN_PAGE)
 
-        instructor = Instructor.query.filter(db.func.lower(Instructor.email) == email).first()
-        if instructor:
+        instructor = Instructor.query.filter(
+            db.func.lower(Instructor.email) == email
+        ).first()
+
+        if instructor is not None:
             return redirect(url_for("manage_files", instructor_id=instructor.id))
 
         return redirect(url_for("new_instructor", email=email))
 
     return render_template_string(TEMPLATE_LOGIN_PAGE)
+
+
+
+
 
 
 
