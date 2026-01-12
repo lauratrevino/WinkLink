@@ -2,3 +2,5 @@
 gunicorn
 openai
 python-dotenv
+
+Flask-SQLAlchemy
