@@ -1938,13 +1938,23 @@ def index():
             flash("Please enter a valid email address.")
             return render_template_string(TEMPLATE_LOGIN_PAGE)
 
-        instructor = Instructor.query.filter(db.func.lower(Instructor.email) == email).first()
-        if instructor:
-            return redirect(url_for("manage_files", instructor_id=instructor.id))
 
-        return redirect(url_for("new_instructor", email=email))
+instructor = Instructor.query.filter_by(email=email).first()
 
-    return render_template_string(TEMPLATE_LOGIN_PAGE)
+if not instructor:
+    instructor = Instructor(
+        email=email,
+        name=email.split("@")[0]
+    )
+    db.session.add(instructor)
+    db.session.commit()
+
+return redirect(url_for("manage_files", instructor_id=instructor.id))
+
+
+
+
+            return render_template_string(TEMPLATE_LOGIN_PAGE)
 
 
 
