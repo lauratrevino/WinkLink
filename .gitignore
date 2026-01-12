@@ -1,5 +1,5 @@
-.env
-pycache/
-uploads/
+﻿.env
+__pycache__/
 instance/
+uploads/
 *.pyc

@@ -7,12 +7,11 @@
 
 import os
 import re
-import json
 import time
 import uuid
 from datetime import datetime
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List
 
 try:
     import requests
@@ -46,21 +45,17 @@ load_dotenv()
 APP_TITLE = "WINK"
 DEFAULT_MODEL = os.getenv("WINK_MODEL", "gpt-4.1-mini")
 
-
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-OPENAI_BASE_URL = "https://api.openai.com"
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com").rstrip("/")
 
-# Common WINK vector store must exist (per original design)
+# Common WINK vector store must exist (per your original design).
 COMMON_VECTOR_STORE_ID = os.getenv("WINK_VECTOR_STORE_ID", "").strip()
-
 if not COMMON_VECTOR_STORE_ID:
-    print("[WARNING] WINK_VECTOR_STORE_ID is not set. Common WINK files will be disabled.")
-    COMMON_VECTOR_STORE_ID = None
+    raise RuntimeError(
+        "WINK_VECTOR_STORE_ID is not set. "
+        "Set this environment variable to the Common WINK vector store ID."
+    )
 
-
-
-
- 
 SECRET_KEY = os.getenv("SECRET_KEY", "change-this-secret")
 
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
@@ -73,11 +68,7 @@ MAX_UPLOAD_MB = int(os.getenv("WINK_MAX_UPLOAD_MB", "25"))
 # Flask + DB
 # ============================================
 
-app = Flask(
-    __name__,
-    static_folder="static",
-    static_url_path="/static",
-)
+app = Flask(__name__)
 app.secret_key = SECRET_KEY
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///wink.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -86,8 +77,10 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 db = SQLAlchemy(app)
 
 # OpenAI client (supports custom base URL if set)
-client = OpenAI(api_key=OPENAI_API_KEY)
-
+if OPENAI_API_KEY:
+    client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+else:
+    client = OpenAI(base_url=OPENAI_BASE_URL)
 
 
 # ============================================
@@ -242,11 +235,6 @@ openai_http = OpenAIHttp(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
 
 
 def get_common_filenames() -> List[str]:
-    if not COMMON_VECTOR_STORE_ID:
-        return []
-
-
-
     # Best-effort; never block the page if it fails.
     try:
         items = openai_http.list_vector_store_files(COMMON_VECTOR_STORE_ID)
@@ -405,7 +393,7 @@ def build_default_left_column_html(display_name: str) -> str:
           overflow:hidden;
         ">
           <img
-            src="/static/WINK.jpeg"
+            src="/static/wink.jpeg"
             alt="WINK avatar"
             style="width:100%;height:100%;object-fit:cover;"
           >
@@ -602,7 +590,7 @@ TEMPLATE_LOGIN_PAGE = """
 
   <div class="body">
     <div class="avatar">
-      <img src="/static/ESEWink.JPG" style="width:100%;height:100%;object-fit:cover;">
+      <img src="/static/ESEwink.jpg" style="width:100%;height:100%;object-fit:cover;">
     </div>
 
     <p class="intro">
@@ -714,7 +702,7 @@ TEMPLATE_NEW_INSTRUCTOR = """
   <div class="card">
     <div class="top">
       <div class="avatar">
-        <img src="/static/WINK.jpeg" style="width:100%;height:100%;object-fit:cover;">
+        <img src="/static/wink.jpeg" style="width:100%;height:100%;object-fit:cover;">
       </div>
       <div>
         <h1>Set up your WINK space</h1>
@@ -871,28 +859,6 @@ TEMPLATE_COMMON_WINK_FILES = """
 </body>
 </html>
 """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1138,11 +1104,9 @@ TEMPLATE_MANAGE_FILES = """
 
 
       
-        <form id="uploadForm" method="post" enctype="multipart/form-data">
-          <input type="file" id="fileInput" name="files" multiple required style="display:none;">
+        
 
-                    
-      <div class="panel">
+<div class="panel">
         <div style="margin-bottom:10px;font-weight:900;">Your course files</div>
 
         {% if files and files|length > 0 %}
@@ -1183,21 +1147,12 @@ TEMPLATE_MANAGE_FILES = """
 
 
 
-
-
-
-
-
-
       </div>
 
       
     </div>
   </div>
 </div>
-
-
-
 
 
 
@@ -1977,25 +1932,17 @@ TEMPLATE_WINK_CHAT = """
 def index():
     if request.method == "POST":
         email = _clean_email(request.form.get("email", ""))
-
         if not email:
             flash("Please enter a valid email address.")
             return render_template_string(TEMPLATE_LOGIN_PAGE)
 
-        instructor = Instructor.query.filter(
-            db.func.lower(Instructor.email) == email
-        ).first()
-
-        if instructor is not None:
+        instructor = Instructor.query.filter(db.func.lower(Instructor.email) == email).first()
+        if instructor:
             return redirect(url_for("manage_files", instructor_id=instructor.id))
 
         return redirect(url_for("new_instructor", email=email))
 
     return render_template_string(TEMPLATE_LOGIN_PAGE)
-
-
-
-
 
 
 
@@ -2196,6 +2143,4 @@ def wink_chat(slug: str):
 # ============================================
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))
-    app.run(host="0.0.0.0", port=port)
-
+    app.run(host="0.0.0.0", port=5001, debug=True)
