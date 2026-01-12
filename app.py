@@ -3,6 +3,8 @@
 # Single-file Flask app: instructor login, onboarding,
 # file manager (personal + common resources), instructor list,
 # and WINK chat with vector-store file_search + mic UI.
+
+#CRAPPPPPPPPPPPP
 # ============================================
 
 import os
@@ -393,7 +395,7 @@ def build_default_left_column_html(display_name: str) -> str:
           overflow:hidden;
         ">
           <img
-            src="/static/wink.jpeg"
+            src="/static/WINK.jpeg"
             alt="WINK avatar"
             style="width:100%;height:100%;object-fit:cover;"
           >
@@ -590,7 +592,7 @@ TEMPLATE_LOGIN_PAGE = """
 
   <div class="body">
     <div class="avatar">
-      <img src="/static/ESEwink.jpg" style="width:100%;height:100%;object-fit:cover;">
+      <img src="/static/ESEWink.JPG" style="width:100%;height:100%;object-fit:cover;">
     </div>
 
     <p class="intro">
@@ -702,7 +704,7 @@ TEMPLATE_NEW_INSTRUCTOR = """
   <div class="card">
     <div class="top">
       <div class="avatar">
-        <img src="/static/wink.jpeg" style="width:100%;height:100%;object-fit:cover;">
+        <img src="/static/WINK.jpeg" style="width:100%;height:100%;object-fit:cover;">
       </div>
       <div>
         <h1>Set up your WINK space</h1>
