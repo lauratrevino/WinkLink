@@ -4,7 +4,7 @@
 # file manager (personal + common resources), instructor list,
 # and WINK chat with vector-store file_search + mic UI.
 
-#CRAPPPPPPPPPPPP
+#MondayMorningWorking
 # ============================================
 
 import os
@@ -227,7 +227,6 @@ class OpenAIHttp:
         self._request("DELETE", f"/v1/vector_stores/{vector_store_id}/files/{file_id}", timeout=30)
 
     def list_vector_store_files(self, vector_store_id: str) -> List[dict]:
-        # Returns a list of dicts from vector store file objects. We keep it simple.
         data = self._request("GET", f"/v1/vector_stores/{vector_store_id}/files?limit=100", timeout=30)
         items = data.get("data", []) or []
         return items
@@ -237,20 +236,15 @@ openai_http = OpenAIHttp(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
 
 
 def get_common_filenames() -> List[str]:
-    # Best-effort; never block the page if it fails.
     try:
         items = openai_http.list_vector_store_files(COMMON_VECTOR_STORE_ID)
         names = []
         for it in items:
-            # Different shapes can appear; try common keys.
-            # vector_store.file objects often include "id" and may include "status" etc.
-            # Filename is not always present here; we attempt to fetch via /v1/files if needed.
             file_id = it.get("id") or it.get("file_id")
             filename = it.get("filename")
             if filename:
                 names.append(filename)
             elif file_id:
-                # Try fetching file metadata
                 try:
                     meta = openai_http._request("GET", f"/v1/files/{file_id}", timeout=30)
                     nm = meta.get("filename")
@@ -258,7 +252,6 @@ def get_common_filenames() -> List[str]:
                         names.append(nm)
                 except Exception:
                     pass
-        # De-dup and sort
         names = sorted({n for n in names if n})
         return names
     except Exception:
@@ -302,7 +295,6 @@ WINK_SYSTEM_PROMPT = (
 )
 
 def _extract_output_text(resp) -> str:
-    # Responses API usually exposes output_text; keep robust fallback.
     if hasattr(resp, "output_text") and resp.output_text:
         return str(resp.output_text).strip()
 
@@ -319,8 +311,6 @@ def _extract_output_text(resp) -> str:
     return (text or "").strip()
 
 def wink_answer(instructor: Instructor, history: List[dict]) -> str:
-    # Build chat input from history list[{"role": "...", "text": "..."}]
-    # Attach file_search across personal + common stores (both, when present).
     messages = [{"role": "system", "content": WINK_SYSTEM_PROMPT}]
     for m in history:
         role = (m.get("role") or "").strip()
@@ -461,7 +451,6 @@ def build_default_left_column_html(display_name: str) -> str:
 def sanitize_left_column_html(html: str) -> str:
     if not html:
         return html
-    # Remove a few legacy labels you said you don’t want in the left panel.
     labels = [
         "Deadlines / syllabus",
         "Deadlines/syllabus",
@@ -1100,6 +1089,8 @@ TEMPLATE_MANAGE_FILES = """
 
 
   
+
+
 
 
 
@@ -1845,9 +1836,6 @@ TEMPLATE_WINK_CHAT = """
     if (winkTextarea) winkTextarea.focus();
   });
 
-  // ===============================
-  // Microphone -> Speech to Text
-  // ===============================
   const micBtn = document.getElementById("wink-mic");
   let recognition = null;
   let isListening = false;
@@ -1930,7 +1918,6 @@ TEMPLATE_WINK_CHAT = """
 # Routes
 # ============================================
 
-
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -1955,27 +1942,6 @@ def index():
     return render_template_string(TEMPLATE_LOGIN_PAGE)
 
 
-
-
-instructor = Instructor.query.filter_by(email=email).first()
-
-if not instructor:
-    instructor = Instructor(
-        email=email,
-        name=email.split("@")[0]
-    )
-    db.session.add(instructor)
-    db.session.commit()
-
-return redirect(url_for("manage_files", instructor_id=instructor.id))
-
-
-
-
-            return render_template_string(TEMPLATE_LOGIN_PAGE)
-
-
-
 @app.route("/admin/common_wink_files/<int:instructor_id>")
 def common_wink_files(instructor_id: int):
     instructor = Instructor.query.get_or_404(instructor_id)
@@ -1986,8 +1952,6 @@ def common_wink_files(instructor_id: int):
         instructor=instructor,
         common_files=common_files,
     )
-
-
 
 
 @app.route("/admin/new_instructor", methods=["GET", "POST"])
@@ -2034,7 +1998,6 @@ def manage_files(instructor_id: int):
     if request.method == "POST":
         action = (request.form.get("action", "") or "").strip().lower()
 
-        # Be forgiving if JS posts without "action"
         if not action:
             incoming_files = request.files.getlist("files") if request.files else []
             has_files = any(getattr(f, "filename", "") for f in (incoming_files or []))
