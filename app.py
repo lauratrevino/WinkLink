@@ -1930,13 +1930,31 @@ TEMPLATE_WINK_CHAT = """
 # Routes
 # ============================================
 
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
         email = _clean_email(request.form.get("email", ""))
+
         if not email:
             flash("Please enter a valid email address.")
             return render_template_string(TEMPLATE_LOGIN_PAGE)
+
+        instructor = Instructor.query.filter_by(email=email).first()
+
+        if not instructor:
+            instructor = Instructor(
+                email=email,
+                name=email.split("@")[0]
+            )
+            db.session.add(instructor)
+            db.session.commit()
+
+        return redirect(url_for("manage_files", instructor_id=instructor.id))
+
+    return render_template_string(TEMPLATE_LOGIN_PAGE)
+
+
 
 
 instructor = Instructor.query.filter_by(email=email).first()
