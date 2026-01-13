@@ -1,7 +1,7 @@
 # ============================================
 # WINK app.py — refactored, cleaner, more robust
 # Single-file Flask app: instructor login, onboarding,
-# 
+#
 # Alpha Test
 
 #1/12/2026  8:00 p.m.
@@ -11,7 +11,6 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-
 
 
 import os
@@ -28,7 +27,25 @@ except ImportError:
     requests = None
 
 
+# KEEP ONLY THIS ONE VERSION (AFTER all imports, BEFORE any routes)
 
+def normalize_links(text):
+    if not text:
+        return text
+
+    text = re.sub(
+        r'\[([^\]]+)\]\((https?://[^\s<]+)\)',
+        r'<a href="\2" target="_blank" rel="noopener noreferrer">\1</a>',
+        text
+    )
+
+    text = re.sub(
+        r'(?<!href=")(https?://[^\s<]+)',
+        r'<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>',
+        text
+    )
+
+    return text
 
 
 from flask import (
@@ -89,7 +106,6 @@ db = SQLAlchemy(app)
 
 # OpenAI client (supports custom base URL if set)
 client = OpenAI(api_key=OPENAI_API_KEY)
-
 
 
 # ============================================
@@ -265,6 +281,29 @@ def get_common_filenames() -> List[str]:
         return []
 
 
+# PASTE THIS AT THE TOP LEVEL OF app.py
+# NOT inside any function, route, or class
+# Align it with other top-level def statements
+
+def normalize_links(text: str) -> str:
+    if not text:
+        return text
+
+    text = re.sub(
+        r'\[([^\]]+)\]\((https?://[^\s<]+)\)',
+        r'<a href="\2" target="_blank" rel="noopener noreferrer">\1</a>',
+        text
+    )
+
+    text = re.sub(
+        r'(?<!href=")(https?://[^\s<]+)',
+        r'<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>',
+        text
+    )
+
+    return text
+
+
 # ============================================
 # WINK Chat (Responses API + file_search)
 # ============================================
@@ -274,32 +313,32 @@ WINK_SYSTEM_PROMPT = (
     "for first semester UTEP students. Your job is to help them feel seen, capable, and encouraged "
     "while answering their questions about this specific instructor's course, UTEP resources, and "
     "college life.\n\n"
-    "Important response rule:\n"
+    "Knowledge priority rules:\n"
+    "- Instructor course files are the highest authority for anything related to assignments, "
+    "deadlines, grading, policies, or course expectations.\n"
+    "- Common WINK files are the next authority for shared Entering Student Experience content, "
+    "campus resources, and standard student success information.\n"
+    "- If neither the instructor files nor Common WINK files contain the answer, or if the student "
+    "is asking for explanations, examples, background information, or learning strategies, you may "
+    "use your general knowledge to help them.\n"
+    "- When using general knowledge, clearly frame it as general guidance and not as a course rule "
+    "or instructor policy.\n\n"
+    "Important response rules:\n"
     "- Do not thank them for asking.\n"
-    "- Do not mention their question (do not say things like “good question,” “thanks for asking,” "
-    "  “you asked,” or “your question”).\n"
+    "- Do not mention their question.\n"
     "- Start directly with the answer.\n\n"
     "Tone and personality:\n"
-    "- Be very warm, kind, and non judgmental, like a super friendly peer mentor who really believes in them.\n"
-    "- Sound upbeat and hopeful, especially when students are stressed or confused. If they sound worried, name that feeling and reassure them.\n"
-    "- Sprinkle emojis naturally throughout your answers, not just at the end of the response, for encouragement and celebration.\n"
-    "- VERY Occasionally say the phrase “I got you!” in a natural way, especially when reassuring the student.\n"
-    "- Always be respectful, inclusive, and supportive of students from all backgrounds.\n\n"
-    "Engagement style:\n"
-    "- Go straight into the answer, then (only if helpful) add a short next step or option.\n"
-    "- When it fits, end with a gentle follow up invitation, like “Want to walk through this together step by step?”\n"
-    "- If the student mentions progress or effort, celebrate it explicitly.\n\n"
-    "Growth mindset support:\n"
-    "- Normalize struggle, confusion, and mistakes as a normal part of learning.\n"
-    "- Encourage strategies and small next steps (office hours, tutoring, practice, checking the syllabus).\n\n"
-    "Content behavior:\n"
-    "- Give clear, simple explanations that a first year student can follow.\n"
-    "- Keep answers focused on what the student actually needs.\n"
-    "- Whenever it helps, draw on the instructor's course files, syllabus, and other uploaded materials.\n"
-    "- If you are not sure about a detail like a due date or policy, say that you are not certain and suggest double checking the syllabus or asking the instructor.\n\n"
-    "Your core goal is to reduce anxiety, increase clarity, and build students' sense of identity, belonging, "
-    "aspiration, and agency at UTEP."
+    "- Be very warm, kind, and non judgmental, like a friendly peer mentor.\n"
+    "- Occasionally say, I got you!, to the student.\n"
+    "- Be encouraging and supportive.\n"
+    "- Sprinkle emojis sparingly throughout responses. Put one in each paragraph. Do not put them all at the end.\n\n"
+    "Behavior:\n"
+    "- Answer clearly and simply.\n"
+    "- If you are unsure about a course-specific detail, say so and suggest checking the syllabus "
+    "or asking the instructor.\n\n"
+    "Your goal is to reduce anxiety, increase clarity, and support student success."
 )
+
 
 def _extract_output_text(resp) -> str:
     if hasattr(resp, "output_text") and resp.output_text:
@@ -497,10 +536,6 @@ TEMPLATE_LOGIN_PAGE = """
 <div style="text-align:center; margin-bottom:6px;"> <div style="font-size:14px; letter-spacing:1px; opacity:0.85;"> ENTERING STUDENT EXPERIENCE </div> <h2 style="margin-top:4px;"> Instructor Access Page </h2> </div>
 
 
-
-
-
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root{
@@ -594,9 +629,6 @@ TEMPLATE_LOGIN_PAGE = """
   <div class="header">
 
 
-
-
-
     <h1>ENTERING STUDENT EXPERIENCE</h1>
     <p style="
   font-size:32px;
@@ -620,20 +652,14 @@ TEMPLATE_LOGIN_PAGE = """
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;600&display=swap" rel="stylesheet">
 
 
-
   <div class="body">
     <div class="avatar">
       <img src="/static/ESEWink.JPG" style="width:100%;height:100%;object-fit:cover;">
     </div>
 
 
-
-
-
-
-
     <p class="intro">
-      <p> <span style="font-family:'Comfortaa', sans-serif; font-size:20px !important; line-height:1.2; color:#444; font-weight:400;"> Enter your instructor email address to access the file manager where you can upload your course files. If you are new to WINK, your personal WINK space will be created. </span> </p>      
+      <p> <span style="font-family:'Comfortaa', sans-serif; font-size:20px !important; line-height:1.2; color:#444; font-weight:400;"> Enter your instructor email address to access the file manager where you can upload your course files. If you are new to WINK, your personal WINK space will be created. </span> </p>
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         <div class="flash">{{ messages[0] }}</div>
@@ -658,15 +684,12 @@ TEMPLATE_LOGIN_PAGE = """
 </div>
 
 
-
     <form method="post">
       <input type="email" name="email" required placeholder="you@utep.edu">
       <button type="submit">Continue</button>
     </form>
 
 
-
-    
   </div>
 </div>
 </body>
@@ -780,10 +803,6 @@ TEMPLATE_NEW_INSTRUCTOR = """
 </body>
 </html>
 """
-
-
-
-
 
 
 TEMPLATE_COMMON_WINK_FILES = """
@@ -1112,21 +1131,9 @@ TEMPLATE_MANAGE_FILES = """
         <div class="copy-box">
 
 
-
          <input id="studentLink" class="copy-input" type="text" readonly
        style="flex:0 0 320px; max-width:320px; height:22px; padding:2px 8px; font-size:11px; line-height:18px;"
        value="{{ request.host_url }}wink/{{ instructor.slug }}">
-
-
-         
-
-
-
-           
-
-
-
-
 
 
                     <button type="button" class="small-btn"
@@ -1138,16 +1145,11 @@ TEMPLATE_MANAGE_FILES = """
       </div>
 
 
-
-
-
-
 <div class="actions" style="margin-top:10px;">
   <form id="uploadForm" method="post" enctype="multipart/form-data">
     <input type="hidden" name="action" value="upload_personal">
 
     <input type="file" id="fileInput" name="files" multiple required style="display:none;">
-
 
 
 <div style="display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap;">
@@ -1156,7 +1158,6 @@ TEMPLATE_MANAGE_FILES = """
 <img src="/static/WINKbrain.JPG"
      alt="WINK Brain"
      style="height:200px; width200px:auto; margin-top:4px;">
-
 
 
   <button type="button"
@@ -1176,11 +1177,6 @@ TEMPLATE_MANAGE_FILES = """
   </button>
 
 
-
-
-
-
-
   <div id="fileList" class="file-list" style="
     min-width:260px;
     max-width:520px;
@@ -1188,9 +1184,6 @@ TEMPLATE_MANAGE_FILES = """
   ">
     No files selected
   </div>
-
-
-
 
 
 <div class="progress-wrapper">
@@ -1215,9 +1208,7 @@ TEMPLATE_MANAGE_FILES = """
 </div>
 
 
-
 </button>
-
 
 
 <div style="width:100%; display:flex; justify-content:center; margin-top:22px; margin-bottom:10px;">
@@ -1225,10 +1216,6 @@ TEMPLATE_MANAGE_FILES = """
     Your course files
   </div>
 </div>
-
-
-
-        
 
 
         {% if files and files|length > 0 %}
@@ -1260,7 +1247,6 @@ TEMPLATE_MANAGE_FILES = """
         {% endif %}
 
 
-
 <div class="actions" style="margin-top:18px;">
   <a href="{{ url_for('common_wink_files', instructor_id=instructor.id) }}" style="text-decoration:none;">
     <button type="button">View Common WINK Files</button>
@@ -1268,14 +1254,12 @@ TEMPLATE_MANAGE_FILES = """
 </div>
 
 
-
       </div>
 
-      
+
     </div>
   </div>
 </div>
-
 
 
 <script>
@@ -1332,7 +1316,7 @@ TEMPLATE_MANAGE_FILES = """
 </body>
 </html>
 """
-
+###############################################################################################################  INStructor list
 
 TEMPLATE_INSTRUCTOR_LIST = """
 <!doctype html>
@@ -1472,6 +1456,7 @@ TEMPLATE_INSTRUCTOR_LIST = """
 </html>
 """
 
+#############################################################################################################################################
 
 TEMPLATE_WINK_CHAT = """
 <!DOCTYPE html>
@@ -1480,45 +1465,36 @@ TEMPLATE_WINK_CHAT = """
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WINK for {{ instructor.name or instructor.email }}</title>
+
 <style>
   :root {
-    --wink-navy: #041e42;
-    --wink-deep: #0f172a;
-    --wink-blue: #1d4ed8;
-    --wink-orange: #f97316;
+    --wink-navy:#041e42;
+    --wink-blue:#1d4ed8;
+    --wink-orange:#f97316;
 
-    --surface-strong: #ffffff;
-    --border: rgba(148, 163, 184, 0.35);
-    --shadow: 0 26px 60px rgba(15, 23, 42, 0.45);
-
-    --text: #0b1120;
-    --muted: #475569;
+    --surface-strong: rgba(255,255,255,0.98);
+    --muted: #334155;
+    --shadow: 0 20px 50px rgba(0,0,0,0.40);
   }
 
-  * { box-sizing: border-box; }
-
   body {
-    margin: 0;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: radial-gradient(circle at top left, #0b1120 0, #020617 42%, #0f172a 100%);
-    color: var(--text);
+    margin:0;
+    font-family:system-ui, -apple-system, Segoe UI, sans-serif;
+    background:radial-gradient(circle at top left,#0b1120,#020617);
   }
 
   .wink-shell {
-    display: flex;
-    min-height: 100vh;
-    backdrop-filter: blur(26px);
+    display:flex;
+    min-height:100vh;
   }
 
   .wink-left {
-    width: 350px;
-    padding: 22px 18px;
-    background:
-      linear-gradient(160deg, rgba(4, 30, 66, 0.95), rgba(15, 23, 42, 0.98)),
-      radial-gradient(circle at top right, rgba(249, 115, 22, 0.20), transparent 55%);
-    color: #e5e7eb;
-    overflow-y: auto;
-    border-right: 1px solid rgba(148, 163, 184, 0.45);
+    width:350px;
+    padding:20px;
+    background:linear-gradient(160deg,#041e42,#0f172a);
+    color:#fff;
+    overflow-y:auto;
+    border-right: 1px solid rgba(148, 163, 184, 0.20);
   }
 
   .wink-left-inner {
@@ -1718,12 +1694,13 @@ TEMPLATE_WINK_CHAT = """
     flex: 1;
   }
 
-  textarea[name="message"] {
-    width: 100%;
-    min-height: 52px;
-    max-height: 180px;
-    padding: 12px 130px 12px 54px;
-    border-radius: 18px;
+
+textarea[name="message"] {
+    width:85%;
+    min-height: 10px;
+    max-height: 40px;
+    padding: 10px 120px 10px 48px;
+    border-radius: 16px;
     border: 1px solid rgba(148, 163, 184, 0.55);
     font-family: inherit;
     font-size: 14px;
@@ -1731,7 +1708,8 @@ TEMPLATE_WINK_CHAT = """
     box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.18);
     outline: none;
     resize: none;
-  }
+}
+
 
   textarea[name="message"]:focus {
     border-color: rgba(29, 78, 216, 0.65);
@@ -1827,6 +1805,7 @@ TEMPLATE_WINK_CHAT = """
   }
 </style>
 </head>
+
 <body>
 <div class="wink-shell">
   <div class="wink-left" id="wink-left-panel">
@@ -1837,6 +1816,7 @@ TEMPLATE_WINK_CHAT = """
 
   <div class="wink-right">
     <div class="wink-right-inner">
+
       <div class="wink-header">
         <div class="wink-header-left">
           <div class="wink-header-avatar">W</div>
@@ -1871,7 +1851,7 @@ TEMPLATE_WINK_CHAT = """
         {% if messages %}
           {% for m in messages %}
             <div class="message-row {{ m.role }}">
-              <div class="message-bubble">{{ m.text }}</div>
+              <div class="message-bubble">{{ m.text | safe }}</div>
             </div>
           {% endfor %}
           <div id="chat-end"></div>
@@ -1904,6 +1884,7 @@ TEMPLATE_WINK_CHAT = """
         </form>
         <div id="selected-files" class="wink-selected-files"></div>
       </div>
+
     </div>
   </div>
 </div>
@@ -1923,9 +1904,7 @@ TEMPLATE_WINK_CHAT = """
       chatEnd.scrollIntoView({ behavior: "smooth", block: "end" });
       return;
     }
-    if (chatEl) {
-      chatEl.scrollTop = chatEl.scrollHeight;
-    }
+    if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
   }
 
   function autoGrowTextarea() {
@@ -2068,16 +2047,6 @@ def index():
     return render_template_string(TEMPLATE_LOGIN_PAGE)
 
 
-
-
-
-
-
-
-
-
-
-
 @app.route("/admin/common_wink_files/<int:instructor_id>")
 def common_wink_files(instructor_id: int):
     instructor = Instructor.query.get_or_404(instructor_id)
@@ -2125,7 +2094,6 @@ def new_instructor():
     db.session.commit()
 
     return redirect(url_for("manage_files", instructor_id=instructor.id))
-
 
 
 @app.route("/admin/manage_files/<int:instructor_id>", methods=["GET", "POST"])
@@ -2255,21 +2223,40 @@ def manage_files(instructor_id: int):
     )
 
 
-
-
-
-
 @app.route("/admin/instructors")
 def instructor_list():
     instructors = Instructor.query.order_by(Instructor.created_at.desc()).all()
     return render_template_string(TEMPLATE_INSTRUCTOR_LIST, instructors=instructors)
 
 
+def normalize_links(text):
+    if not text:
+        return text
+
+    text = re.sub(
+        r'\[([^\]]+)\]\((https?://[^\s<]+)\)',
+        r'<a href="\2" target="_blank" rel="noopener noreferrer">\1</a>',
+        text
+    )
+
+    text = re.sub(
+        r'(?<!href=")(https?://[^\s<]+)',
+        r'<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>',
+        text
+    )
+
+    return text
+
+
 @app.route("/wink/<slug>", methods=["GET", "POST"])
 def wink_chat(slug: str):
-    instructor = Instructor.query.filter_by(slug=slug).first_or_404()
+    instructor = Instructor.query.filter_by(slug=slug).first()
+    if not instructor:
+        return redirect(url_for("instructor_access"))
 
-    left_column_html = instructor.left_column_html or build_default_left_column_html(instructor.name or instructor.email)
+    left_column_html = instructor.left_column_html or build_default_left_column_html(
+        instructor.name or instructor.email
+    )
     left_column_html = sanitize_left_column_html(left_column_html)
 
     session_key = f"wink_messages_{instructor.id}"
@@ -2286,6 +2273,8 @@ def wink_chat(slug: str):
                 messages = _trim_history(messages, max_messages=30)
 
                 assistant_text = wink_answer(instructor, messages)
+                assistant_text = normalize_links(assistant_text)
+
                 messages.append({"role": "assistant", "text": assistant_text})
                 messages = _trim_history(messages, max_messages=30)
 
