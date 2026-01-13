@@ -4,7 +4,7 @@
 # file manager (personal + common resources), instructor list,
 # and WINK chat with vector-store file_search + mic UI.
 
-#MondayMorningWorking
+#CRAPPPPPPPPPPPP
 # ============================================
 
 import os
@@ -79,10 +79,8 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 db = SQLAlchemy(app)
 
 # OpenAI client (supports custom base URL if set)
-if OPENAI_API_KEY:
-    client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
-else:
-    client = OpenAI(base_url=OPENAI_BASE_URL)
+client = OpenAI(api_key=OPENAI_API_KEY)
+
 
 
 # ============================================
@@ -851,7 +849,7 @@ TEMPLATE_COMMON_WINK_FILES = """
 </html>
 """
 
-
+#################################################################################################################################################################  Manage Files
 
 TEMPLATE_MANAGE_FILES = """
 <!doctype html>
@@ -1061,34 +1059,52 @@ TEMPLATE_MANAGE_FILES = """
 
 
 
-<div class="panel">
-  <div style="margin-bottom:8px;font-weight:900;">Upload course materials</div>
-
+<div class="actions" style="margin-top:10px;">
   <form id="uploadForm" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="action" value="upload_personal">
+
     <input type="file" id="fileInput" name="files" multiple required style="display:none;">
 
-    <div class="file-picker-box">
-      <button type="button" class="small-btn" onclick="document.getElementById('fileInput').click()">
-        Choose files
-      </button>
+    <button type="button"
+            onclick="document.getElementById('fileInput').click()"
+            style="
+              padding:12px 16px;
+              border-radius:14px;
+              border:none;
+              background:linear-gradient(135deg,var(--wink-orange),var(--wink-blue));
+              color:#fff;
+              font-weight:800;
+              font-size:14px;
+              cursor:pointer;
+              margin-right:10px;
+            ">
+      Choose files
+    </button>
 
-      <div id="fileList" class="file-list">No files selected</div>
+    <button type="submit">
+      Upload to Instructor Vector Store
+    </button>
 
-      <div class="progress-wrapper">
-        <div id="uploadProgress" class="progress-bar"></div>
-      </div>
+    <div id="fileList" class="file-list">
+      No files selected
     </div>
 
-    <div class="actions">
-      <button type="submit" name="action" value="upload">Upload to WINK</button>
+    <div class="progress-wrapper">
+      <div id="uploadProgress" class="progress-bar"></div>
     </div>
-
-    <div class="small">Uploaded files are added to your course knowledge base.</div>
   </form>
 </div>
 
 
-  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1918,6 +1934,7 @@ TEMPLATE_WINK_CHAT = """
 # Routes
 # ============================================
 
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -1929,17 +1946,23 @@ def index():
 
         instructor = Instructor.query.filter_by(email=email).first()
 
-        if not instructor:
-            instructor = Instructor(
-                email=email,
-                name=email.split("@")[0]
-            )
-            db.session.add(instructor)
-            db.session.commit()
+        if instructor:
+            return redirect(url_for("manage_files", instructor_id=instructor.id))
 
-        return redirect(url_for("manage_files", instructor_id=instructor.id))
+        # NOT REGISTERED → GO TO NAME PAGE
+        return redirect(url_for("new_instructor", email=email))
 
     return render_template_string(TEMPLATE_LOGIN_PAGE)
+
+
+
+
+
+
+
+
+
+
 
 
 @app.route("/admin/common_wink_files/<int:instructor_id>")
@@ -1991,6 +2014,7 @@ def new_instructor():
     return redirect(url_for("manage_files", instructor_id=instructor.id))
 
 
+
 @app.route("/admin/manage_files/<int:instructor_id>", methods=["GET", "POST"])
 def manage_files(instructor_id: int):
     instructor = Instructor.query.get_or_404(instructor_id)
@@ -1998,82 +2022,110 @@ def manage_files(instructor_id: int):
     if request.method == "POST":
         action = (request.form.get("action", "") or "").strip().lower()
 
-        if not action:
-            incoming_files = request.files.getlist("files") if request.files else []
-            has_files = any(getattr(f, "filename", "") for f in (incoming_files or []))
-            if has_files:
-                action = "upload"
-            elif (request.form.get("file_id") or "").strip():
-                action = "delete"
-
-        if action == "upload":
+        # -------- NEW BUTTON HANDLER --------
+        if action == "upload_personal":
             if not instructor.personal_vector_store_id:
-                flash("No vector store found for this instructor.", "bad")
+                flash("No instructor vector store found.", "bad")
                 return redirect(url_for("manage_files", instructor_id=instructor.id))
 
             files = request.files.getlist("files")
-            if not files or not files[0] or not files[0].filename:
-                flash("Please choose at least one file to upload.", "bad")
+            if not files or not files[0].filename:
+                flash("No files selected.", "bad")
                 return redirect(url_for("manage_files", instructor_id=instructor.id))
 
-            uploaded_count = 0
             for f in files:
-                if not f or not f.filename:
-                    continue
-
-                safe_name = secure_filename(f.filename)
-                stamp = int(time.time() * 1000)
-                local_path = os.path.join(UPLOAD_DIR, f"{stamp}_{safe_name}")
-                f.save(local_path)
+                fname = secure_filename(f.filename)
+                path = os.path.join(UPLOAD_DIR, f"{int(time.time()*1000)}_{fname}")
+                f.save(path)
 
                 try:
-                    file_id = openai_http.upload_file(local_path, safe_name)
-                    openai_http.add_file_to_vector_store(instructor.personal_vector_store_id, file_id)
-
-                    rec = InstructorFile(
-                        instructor_id=instructor.id,
-                        file_id=file_id,
-                        filename=safe_name,
+                    file_id = openai_http.upload_file(path, fname)
+                    openai_http.add_file_to_vector_store(
+                        instructor.personal_vector_store_id,
+                        file_id
                     )
-                    db.session.add(rec)
+                    db.session.add(
+                        InstructorFile(
+                            instructor_id=instructor.id,
+                            file_id=file_id,
+                            filename=fname,
+                        )
+                    )
                     db.session.commit()
-                    uploaded_count += 1
-                except Exception as e:
-                    flash(f"Upload failed for {safe_name}: {e}", "bad")
                 finally:
                     try:
-                        os.remove(local_path)
+                        os.remove(path)
                     except Exception:
                         pass
 
-            if uploaded_count > 0:
-                flash(f"Uploaded {uploaded_count} file(s) to WINK.", "ok")
-
+            flash("Uploaded to instructor vector store.", "ok")
             return redirect(url_for("manage_files", instructor_id=instructor.id))
 
+        # -------- EXISTING UPLOAD BUTTON --------
+        if action == "upload":
+            if not instructor.personal_vector_store_id:
+                flash("No instructor vector store found.", "bad")
+                return redirect(url_for("manage_files", instructor_id=instructor.id))
+
+            files = request.files.getlist("files")
+            if not files or not files[0].filename:
+                flash("Please choose at least one file.", "bad")
+                return redirect(url_for("manage_files", instructor_id=instructor.id))
+
+            for f in files:
+                fname = secure_filename(f.filename)
+                path = os.path.join(UPLOAD_DIR, f"{int(time.time()*1000)}_{fname}")
+                f.save(path)
+
+                try:
+                    file_id = openai_http.upload_file(path, fname)
+                    openai_http.add_file_to_vector_store(
+                        instructor.personal_vector_store_id,
+                        file_id
+                    )
+                    db.session.add(
+                        InstructorFile(
+                            instructor_id=instructor.id,
+                            file_id=file_id,
+                            filename=fname,
+                        )
+                    )
+                    db.session.commit()
+                finally:
+                    try:
+                        os.remove(path)
+                    except Exception:
+                        pass
+
+            flash("Files uploaded to WINK.", "ok")
+            return redirect(url_for("manage_files", instructor_id=instructor.id))
+
+        # -------- DELETE --------
         if action == "delete":
-            file_id = (request.form.get("file_id", "") or "").strip()
+            file_id = (request.form.get("file_id") or "").strip()
             if not file_id:
-                flash("Missing file_id.", "bad")
                 return redirect(url_for("manage_files", instructor_id=instructor.id))
 
-            rec = InstructorFile.query.filter_by(instructor_id=instructor.id, file_id=file_id).first()
+            rec = InstructorFile.query.filter_by(
+                instructor_id=instructor.id,
+                file_id=file_id,
+            ).first()
 
-            try:
-                if instructor.personal_vector_store_id:
-                    openai_http.delete_file_from_vector_store(instructor.personal_vector_store_id, file_id)
-            except Exception as e:
-                flash(f"Could not remove file from vector store: {e}", "bad")
-                return redirect(url_for("manage_files", instructor_id=instructor.id))
+            if rec and instructor.personal_vector_store_id:
+                try:
+                    openai_http.delete_file_from_vector_store(
+                        instructor.personal_vector_store_id,
+                        file_id
+                    )
+                except Exception:
+                    pass
 
-            if rec:
                 db.session.delete(rec)
                 db.session.commit()
 
             flash("File deleted.", "ok")
             return redirect(url_for("manage_files", instructor_id=instructor.id))
 
-        flash("Unknown action.", "bad")
         return redirect(url_for("manage_files", instructor_id=instructor.id))
 
     files = (
@@ -2082,13 +2134,16 @@ def manage_files(instructor_id: int):
         .order_by(InstructorFile.uploaded_at.desc())
         .all()
     )
-    common_files = get_common_filenames()
+
     return render_template_string(
         TEMPLATE_MANAGE_FILES,
         instructor=instructor,
         files=files,
-        common_files=common_files,
     )
+
+
+
+
 
 
 @app.route("/admin/instructors")
