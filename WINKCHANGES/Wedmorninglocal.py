@@ -570,7 +570,7 @@ TEMPLATE_LOGIN_PAGE = """
     width:100%;
     border:none;
     border-radius:16px;
-    font-size:22px;
+    font-size:15px;
     font-weight:800;
     color:#fff;
     background:linear-gradient(135deg,var(--wink-orange),var(--wink-blue));
@@ -592,28 +592,9 @@ TEMPLATE_LOGIN_PAGE = """
 <body>
 <div class="card">
   <div class="header">
-
-
-
-
-
     <h1>ENTERING STUDENT EXPERIENCE</h1>
-    <p style="
-  font-size:32px;
-  font-weight:900;
-  letter-spacing:1px;
-  margin-top:8px;
-">
-  WINK
-</p>
-    <p style="
-  font-size:24px;
-  font-weight:500;
-  letter-spacing:1px;
-  margin-top:8px;
-">
-  Your Custom AI Assistant
-</p>
+    <p>WINK</p>
+    <p>Your Custom AI Course Assistant</p>
   </div>
 
 
@@ -633,40 +614,21 @@ TEMPLATE_LOGIN_PAGE = """
 
 
     <p class="intro">
-      <p> <span style="font-family:'Comfortaa', sans-serif; font-size:20px !important; line-height:1.2; color:#444; font-weight:400;"> Enter your instructor email address to access the file manager where you can upload your course files. If you are new to WINK, your personal WINK space will be created. </span> </p>      
+      <p> <span style="font-family:'Nunito', sans-serif; font-size:20px !important; line-height:1.2; color:#444; font-weight:600;"> Enter your instructor email address to access the file manager where you can upload your course files. If you are new to WINK, your personal WINK space will be created. </span> </p>      
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         <div class="flash">{{ messages[0] }}</div>
       {% endif %}
     {% endwith %}
 
-<hr style="
-  width:100%;
-  border:none;
-  border-top:2px solid #e5e7eb;
-  margin:24px 0 18px 0;
-">
-
-<div style="
-  margin-top:18px;
-  font-family:'Comfortaa', sans-serif;
-  font-size:16px;
-  font-weight:300;
-  color:#0b1120;
-">
-  Enter Your UTEP email address.
-</div>
-
-
-
     <form method="post">
       <input type="email" name="email" required placeholder="you@utep.edu">
       <button type="submit">Continue</button>
     </form>
 
-
-
-    
+    <div class="hint">
+      Enter Your UTEP email address.
+    </div>
   </div>
 </div>
 </body>
@@ -1006,7 +968,7 @@ TEMPLATE_MANAGE_FILES = """
   }
   th{
     padding:10px 12px;
-    border-bottom:1px solid #e2e8f
+    border-bottom:1px solid #e2e8f0;
     text-align:left;
     font-size:13px;
     font-weight:900;
@@ -1110,26 +1072,9 @@ TEMPLATE_MANAGE_FILES = """
       <div class="panel">
         <div style="margin-bottom:8px;font-weight:900;">Student chat link</div>
         <div class="copy-box">
-
-
-
-         <input id="studentLink" class="copy-input" type="text" readonly
-       style="flex:0 0 320px; max-width:320px; height:22px; padding:2px 8px; font-size:11px; line-height:18px;"
-       value="{{ request.host_url }}wink/{{ instructor.slug }}">
-
-
-         
-
-
-
-           
-
-
-
-
-
-
-                    <button type="button" class="small-btn"
+          <input id="studentLink" class="copy-input" type="text" readonly
+                 value="{{ request.host_url }}wink/{{ instructor.slug }}">
+          <button type="button" class="small-btn"
                   onclick="navigator.clipboard.writeText(document.getElementById('studentLink').value)">
             Copy
           </button>
@@ -1148,88 +1093,58 @@ TEMPLATE_MANAGE_FILES = """
 
     <input type="file" id="fileInput" name="files" multiple required style="display:none;">
 
+    <button type="button"
+            onclick="document.getElementById('fileInput').click()"
+            style="
+              padding:12px 16px;
+              border-radius:14px;
+              border:none;
+              background:linear-gradient(135deg,var(--wink-orange),var(--wink-blue));
+              color:#fff;
+              font-weight:800;
+              font-size:14px;
+              cursor:pointer;
+              margin-right:10px;
+            ">
+      Choose files
+    </button>
 
+    <button type="submit">
+      Upload to Instructor Vector Store
+    </button>
 
-<div style="display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+    <div id="fileList" class="file-list">
+      No files selected
+    </div>
 
-
-<img src="/static/WINKbrain.JPG"
-     alt="WINK Brain"
-     style="height:200px; width200px:auto; margin-top:4px;">
-
-
-
-  <button type="button"
-          onclick="document.getElementById('fileInput').click()"
-          style="
-            padding:12px 16px;
-            border-radius:14px;
-            border:none;
-            background:linear-gradient(135deg,var(--wink-orange),var(--wink-blue));
-            color:#fff;
-            font-weight:800;
-            font-size:14px;
-            cursor:pointer;
-            white-space:nowrap;
-          ">
-    Choose files
-  </button>
-
-
-
-
-
-
-
-  <div id="fileList" class="file-list" style="
-    min-width:260px;
-    max-width:520px;
-    margin-top:2px;
-  ">
-    No files selected
-  </div>
-
-
-
-
-
-<div class="progress-wrapper">
-  <div id="uploadProgress" class="progress-bar"></div>
-</div>
-
-
-<div style="width:100%; display:flex; justify-content:center; margin-top:14px;">
-  <button type="submit"
-          style="
-            padding:14px 22px;
-            border-radius:16px;
-            border:none;
-            background:linear-gradient(135deg,var(--wink-orange),var(--wink-blue));
-            color:#fff;
-            font-weight:900;
-            font-size:16px;
-            cursor:pointer;
-          ">
-    Upload to WINK
-  </button>
+    <div class="progress-wrapper">
+      <div id="uploadProgress" class="progress-bar"></div>
+    </div>
+  </form>
 </div>
 
 
 
-</button>
 
 
 
-<div style="width:100%; display:flex; justify-content:center; margin-top:22px; margin-bottom:10px;">
-  <div style="font-weight:900;">
-    Your course files
-  </div>
-</div>
 
 
 
+
+
+
+
+
+
+
+
+
+      
         
 
+<div class="panel">
+        <div style="margin-bottom:10px;font-weight:900;">Your course files</div>
 
         {% if files and files|length > 0 %}
         <table>

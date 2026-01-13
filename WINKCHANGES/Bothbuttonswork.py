@@ -1,18 +1,11 @@
 # ============================================
 # WINK app.py — refactored, cleaner, more robust
 # Single-file Flask app: instructor login, onboarding,
-# 
-# Alpha Test
+# file manager (personal + common resources), instructor list,
+# and WINK chat with vector-store file_search + mic UI.
 
-#1/12/2026  8:00 p.m.
+#CRAPPPPPPPPPPPP
 # ============================================
-
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-
 
 import os
 import re
@@ -27,9 +20,7 @@ try:
 except ImportError:
     requests = None
 
-
-
-
+from dotenv import load_dotenv
 
 from flask import (
     Flask,
@@ -88,8 +79,10 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 db = SQLAlchemy(app)
 
 # OpenAI client (supports custom base URL if set)
-client = OpenAI(api_key=OPENAI_API_KEY)
-
+if OPENAI_API_KEY:
+    client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+else:
+    client = OpenAI(base_url=OPENAI_BASE_URL)
 
 
 # ============================================
@@ -282,8 +275,8 @@ WINK_SYSTEM_PROMPT = (
     "Tone and personality:\n"
     "- Be very warm, kind, and non judgmental, like a super friendly peer mentor who really believes in them.\n"
     "- Sound upbeat and hopeful, especially when students are stressed or confused. If they sound worried, name that feeling and reassure them.\n"
-    "- Sprinkle emojis naturally throughout your answers, not just at the end of the response, for encouragement and celebration.\n"
-    "- VERY Occasionally say the phrase “I got you!” in a natural way, especially when reassuring the student.\n"
+    "- Use emojis naturally throughout your answers for encouragement and celebration.\n"
+    "- Occasionally say the phrase “I got you!” in a natural way, especially when reassuring the student.\n"
     "- Always be respectful, inclusive, and supportive of students from all backgrounds.\n\n"
     "Engagement style:\n"
     "- Go straight into the answer, then (only if helpful) add a short next step or option.\n"
@@ -346,9 +339,9 @@ def wink_answer(instructor: Instructor, history: List[dict]) -> str:
         return f"There was an API error: {e}"
 
 
-# =======================================================================================================
+# ============================================
 # Left column HTML
-# =====================================================================================================
+# ============================================
 
 def build_default_left_column_html(display_name: str) -> str:
     safe_name = display_name or "Your instructor"
@@ -362,7 +355,7 @@ def build_default_left_column_html(display_name: str) -> str:
         margin-bottom:16px;
         box-shadow:0 14px 30px rgba(0,0,0,0.55);
       ">
-        <div style="font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:0.16em;opacity:0.96;">
+        <div style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:0.16em;opacity:0.96;">
           ENTERING STUDENT EXPERIENCES
         </div>
         <div style="font-size:13px;margin-top:6px;opacity:0.92;">
@@ -448,9 +441,9 @@ def build_default_left_column_html(display_name: str) -> str:
         <div style="font-weight:700;color:#f9fafb;margin-bottom:6px;font-size:14px;">
           Try asking WINK:
         </div>
-        <div style="margin-bottom:4px;"> “What is due this week in this class?”</div>
-        <div style="margin-bottom:4px;"> “Help me draft an email to my instructor.”</div>
-        <div> “Where can I get tutoring at UTEP?”</div>
+        <div style="margin-bottom:4px;">• “What is due this week in this class?”</div>
+        <div style="margin-bottom:4px;">• “Help me draft an email to my instructor.”</div>
+        <div>• “Where can I get tutoring at UTEP?”</div>
       </div>
     </div>
     """
@@ -485,22 +478,12 @@ def sanitize_left_column_html(html: str) -> str:
 # Templates
 # ============================================
 
-#====================================================================================   LOGIN PAGE
-
 TEMPLATE_LOGIN_PAGE = """
 <!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
-
-
-<div style="text-align:center; margin-bottom:6px;"> <div style="font-size:14px; letter-spacing:1px; opacity:0.85;"> ENTERING STUDENT EXPERIENCE </div> <h2 style="margin-top:4px;"> Instructor Access Page </h2> </div>
-
-
-
-
-
-
+<title>WINK Instructor Access</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root{
@@ -570,7 +553,7 @@ TEMPLATE_LOGIN_PAGE = """
     width:100%;
     border:none;
     border-radius:16px;
-    font-size:22px;
+    font-size:15px;
     font-weight:800;
     color:#fff;
     background:linear-gradient(135deg,var(--wink-orange),var(--wink-blue));
@@ -584,7 +567,7 @@ TEMPLATE_LOGIN_PAGE = """
   }
   .hint{
     margin-top:10px;
-    font-size:20ppx;
+    font-size:12px;
     color:#475569;
   }
 </style>
@@ -592,87 +575,40 @@ TEMPLATE_LOGIN_PAGE = """
 <body>
 <div class="card">
   <div class="header">
-
-
-
-
-
-    <h1>ENTERING STUDENT EXPERIENCE</h1>
-    <p style="
-  font-size:32px;
-  font-weight:900;
-  letter-spacing:1px;
-  margin-top:8px;
-">
-  WINK
-</p>
-    <p style="
-  font-size:24px;
-  font-weight:500;
-  letter-spacing:1px;
-  margin-top:8px;
-">
-  Your Custom AI Assistant
-</p>
+    <h1>Welcome to WINK</h1>
+    <p>Your Custom AI Course Assistant</p>
   </div>
-
-
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;600&display=swap" rel="stylesheet">
-
-
 
   <div class="body">
     <div class="avatar">
       <img src="/static/ESEWink.JPG" style="width:100%;height:100%;object-fit:cover;">
     </div>
 
-
-
-
-
-
-
     <p class="intro">
-      <p> <span style="font-family:'Comfortaa', sans-serif; font-size:20px !important; line-height:1.2; color:#444; font-weight:400;"> Enter your instructor email address to access the file manager where you can upload your course files. If you are new to WINK, your personal WINK space will be created. </span> </p>      
+      Enter your instructor email address. If you already use WINK, you’ll go to your file manager.
+      If you’re new, your personal WINK space will be created automatically.
+    </p>
+
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         <div class="flash">{{ messages[0] }}</div>
       {% endif %}
     {% endwith %}
 
-<hr style="
-  width:100%;
-  border:none;
-  border-top:2px solid #e5e7eb;
-  margin:24px 0 18px 0;
-">
-
-<div style="
-  margin-top:18px;
-  font-family:'Comfortaa', sans-serif;
-  font-size:16px;
-  font-weight:300;
-  color:#0b1120;
-">
-  Enter Your UTEP email address.
-</div>
-
-
-
     <form method="post">
       <input type="email" name="email" required placeholder="you@utep.edu">
       <button type="submit">Continue</button>
     </form>
 
-
-
-    
+    <div class="hint">
+      Use the email address you want associated with your WINK course space.
+    </div>
   </div>
 </div>
 </body>
 </html>
 """
-###############################################################################  New Instructor
+
 
 TEMPLATE_NEW_INSTRUCTOR = """
 <!doctype html>
@@ -915,7 +851,7 @@ TEMPLATE_COMMON_WINK_FILES = """
 </html>
 """
 
-#################################################################################################################################################################  Manage Files
+
 
 TEMPLATE_MANAGE_FILES = """
 <!doctype html>
@@ -1006,7 +942,7 @@ TEMPLATE_MANAGE_FILES = """
   }
   th{
     padding:10px 12px;
-    border-bottom:1px solid #e2e8f
+    border-bottom:1px solid #e2e8f0;
     text-align:left;
     font-size:13px;
     font-weight:900;
@@ -1110,26 +1046,9 @@ TEMPLATE_MANAGE_FILES = """
       <div class="panel">
         <div style="margin-bottom:8px;font-weight:900;">Student chat link</div>
         <div class="copy-box">
-
-
-
-         <input id="studentLink" class="copy-input" type="text" readonly
-       style="flex:0 0 320px; max-width:320px; height:22px; padding:2px 8px; font-size:11px; line-height:18px;"
-       value="{{ request.host_url }}wink/{{ instructor.slug }}">
-
-
-         
-
-
-
-           
-
-
-
-
-
-
-                    <button type="button" class="small-btn"
+          <input id="studentLink" class="copy-input" type="text" readonly
+                 value="{{ request.host_url }}wink/{{ instructor.slug }}">
+          <button type="button" class="small-btn"
                   onclick="navigator.clipboard.writeText(document.getElementById('studentLink').value)">
             Copy
           </button>
@@ -1142,94 +1061,46 @@ TEMPLATE_MANAGE_FILES = """
 
 
 
-<div class="actions" style="margin-top:10px;">
-  <form id="uploadForm" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="action" value="upload_personal">
+<div class="panel">
+  <div style="margin-bottom:8px;font-weight:900;">Upload course materials</div>
 
+  <form id="uploadForm" method="post" enctype="multipart/form-data">
     <input type="file" id="fileInput" name="files" multiple required style="display:none;">
 
+    <div class="file-picker-box">
+      <button type="button" class="small-btn" onclick="document.getElementById('fileInput').click()">
+        Choose files
+      </button>
 
+      <div id="fileList" class="file-list">No files selected</div>
 
-<div style="display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+      <div class="progress-wrapper">
+        <div id="uploadProgress" class="progress-bar"></div>
+      </div>
+    </div>
 
+    <div class="actions">
+      <button type="submit" name="action" value="upload">Upload to WINK</button>
+    </div>
 
-<img src="/static/WINKbrain.JPG"
-     alt="WINK Brain"
-     style="height:200px; width200px:auto; margin-top:4px;">
-
-
-
-  <button type="button"
-          onclick="document.getElementById('fileInput').click()"
-          style="
-            padding:12px 16px;
-            border-radius:14px;
-            border:none;
-            background:linear-gradient(135deg,var(--wink-orange),var(--wink-blue));
-            color:#fff;
-            font-weight:800;
-            font-size:14px;
-            cursor:pointer;
-            white-space:nowrap;
-          ">
-    Choose files
-  </button>
-
-
-
-
-
-
-
-  <div id="fileList" class="file-list" style="
-    min-width:260px;
-    max-width:520px;
-    margin-top:2px;
-  ">
-    No files selected
-  </div>
-
-
-
-
-
-<div class="progress-wrapper">
-  <div id="uploadProgress" class="progress-bar"></div>
+    <div class="small">Uploaded files are added to your course knowledge base.</div>
+  </form>
 </div>
 
 
-<div style="width:100%; display:flex; justify-content:center; margin-top:14px;">
-  <button type="submit"
-          style="
-            padding:14px 22px;
-            border-radius:16px;
-            border:none;
-            background:linear-gradient(135deg,var(--wink-orange),var(--wink-blue));
-            color:#fff;
-            font-weight:900;
-            font-size:16px;
-            cursor:pointer;
-          ">
-    Upload to WINK
-  </button>
-</div>
+  
 
 
 
-</button>
 
 
 
-<div style="width:100%; display:flex; justify-content:center; margin-top:22px; margin-bottom:10px;">
-  <div style="font-weight:900;">
-    Your course files
-  </div>
-</div>
 
-
-
+      
         
 
+<div class="panel">
+        <div style="margin-bottom:10px;font-weight:900;">Your course files</div>
 
         {% if files and files|length > 0 %}
         <table>
@@ -2047,7 +1918,6 @@ TEMPLATE_WINK_CHAT = """
 # Routes
 # ============================================
 
-
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -2059,23 +1929,17 @@ def index():
 
         instructor = Instructor.query.filter_by(email=email).first()
 
-        if instructor:
-            return redirect(url_for("manage_files", instructor_id=instructor.id))
+        if not instructor:
+            instructor = Instructor(
+                email=email,
+                name=email.split("@")[0]
+            )
+            db.session.add(instructor)
+            db.session.commit()
 
-        # NOT REGISTERED → GO TO NAME PAGE
-        return redirect(url_for("new_instructor", email=email))
+        return redirect(url_for("manage_files", instructor_id=instructor.id))
 
     return render_template_string(TEMPLATE_LOGIN_PAGE)
-
-
-
-
-
-
-
-
-
-
 
 
 @app.route("/admin/common_wink_files/<int:instructor_id>")
@@ -2127,7 +1991,6 @@ def new_instructor():
     return redirect(url_for("manage_files", instructor_id=instructor.id))
 
 
-
 @app.route("/admin/manage_files/<int:instructor_id>", methods=["GET", "POST"])
 def manage_files(instructor_id: int):
     instructor = Instructor.query.get_or_404(instructor_id)
@@ -2135,110 +1998,82 @@ def manage_files(instructor_id: int):
     if request.method == "POST":
         action = (request.form.get("action", "") or "").strip().lower()
 
-        # -------- NEW BUTTON HANDLER --------
-        if action == "upload_personal":
-            if not instructor.personal_vector_store_id:
-                flash("No instructor vector store found.", "bad")
-                return redirect(url_for("manage_files", instructor_id=instructor.id))
+        if not action:
+            incoming_files = request.files.getlist("files") if request.files else []
+            has_files = any(getattr(f, "filename", "") for f in (incoming_files or []))
+            if has_files:
+                action = "upload"
+            elif (request.form.get("file_id") or "").strip():
+                action = "delete"
 
-            files = request.files.getlist("files")
-            if not files or not files[0].filename:
-                flash("No files selected.", "bad")
-                return redirect(url_for("manage_files", instructor_id=instructor.id))
-
-            for f in files:
-                fname = secure_filename(f.filename)
-                path = os.path.join(UPLOAD_DIR, f"{int(time.time()*1000)}_{fname}")
-                f.save(path)
-
-                try:
-                    file_id = openai_http.upload_file(path, fname)
-                    openai_http.add_file_to_vector_store(
-                        instructor.personal_vector_store_id,
-                        file_id
-                    )
-                    db.session.add(
-                        InstructorFile(
-                            instructor_id=instructor.id,
-                            file_id=file_id,
-                            filename=fname,
-                        )
-                    )
-                    db.session.commit()
-                finally:
-                    try:
-                        os.remove(path)
-                    except Exception:
-                        pass
-
-            flash("Uploaded to instructor vector store.", "ok")
-            return redirect(url_for("manage_files", instructor_id=instructor.id))
-
-        # -------- EXISTING UPLOAD BUTTON --------
         if action == "upload":
             if not instructor.personal_vector_store_id:
-                flash("No instructor vector store found.", "bad")
+                flash("No vector store found for this instructor.", "bad")
                 return redirect(url_for("manage_files", instructor_id=instructor.id))
 
             files = request.files.getlist("files")
-            if not files or not files[0].filename:
-                flash("Please choose at least one file.", "bad")
+            if not files or not files[0] or not files[0].filename:
+                flash("Please choose at least one file to upload.", "bad")
                 return redirect(url_for("manage_files", instructor_id=instructor.id))
 
+            uploaded_count = 0
             for f in files:
-                fname = secure_filename(f.filename)
-                path = os.path.join(UPLOAD_DIR, f"{int(time.time()*1000)}_{fname}")
-                f.save(path)
+                if not f or not f.filename:
+                    continue
+
+                safe_name = secure_filename(f.filename)
+                stamp = int(time.time() * 1000)
+                local_path = os.path.join(UPLOAD_DIR, f"{stamp}_{safe_name}")
+                f.save(local_path)
 
                 try:
-                    file_id = openai_http.upload_file(path, fname)
-                    openai_http.add_file_to_vector_store(
-                        instructor.personal_vector_store_id,
-                        file_id
+                    file_id = openai_http.upload_file(local_path, safe_name)
+                    openai_http.add_file_to_vector_store(instructor.personal_vector_store_id, file_id)
+
+                    rec = InstructorFile(
+                        instructor_id=instructor.id,
+                        file_id=file_id,
+                        filename=safe_name,
                     )
-                    db.session.add(
-                        InstructorFile(
-                            instructor_id=instructor.id,
-                            file_id=file_id,
-                            filename=fname,
-                        )
-                    )
+                    db.session.add(rec)
                     db.session.commit()
+                    uploaded_count += 1
+                except Exception as e:
+                    flash(f"Upload failed for {safe_name}: {e}", "bad")
                 finally:
                     try:
-                        os.remove(path)
+                        os.remove(local_path)
                     except Exception:
                         pass
 
-            flash("Files uploaded to WINK.", "ok")
+            if uploaded_count > 0:
+                flash(f"Uploaded {uploaded_count} file(s) to WINK.", "ok")
+
             return redirect(url_for("manage_files", instructor_id=instructor.id))
 
-        # -------- DELETE --------
         if action == "delete":
-            file_id = (request.form.get("file_id") or "").strip()
+            file_id = (request.form.get("file_id", "") or "").strip()
             if not file_id:
+                flash("Missing file_id.", "bad")
                 return redirect(url_for("manage_files", instructor_id=instructor.id))
 
-            rec = InstructorFile.query.filter_by(
-                instructor_id=instructor.id,
-                file_id=file_id,
-            ).first()
+            rec = InstructorFile.query.filter_by(instructor_id=instructor.id, file_id=file_id).first()
 
-            if rec and instructor.personal_vector_store_id:
-                try:
-                    openai_http.delete_file_from_vector_store(
-                        instructor.personal_vector_store_id,
-                        file_id
-                    )
-                except Exception:
-                    pass
+            try:
+                if instructor.personal_vector_store_id:
+                    openai_http.delete_file_from_vector_store(instructor.personal_vector_store_id, file_id)
+            except Exception as e:
+                flash(f"Could not remove file from vector store: {e}", "bad")
+                return redirect(url_for("manage_files", instructor_id=instructor.id))
 
+            if rec:
                 db.session.delete(rec)
                 db.session.commit()
 
             flash("File deleted.", "ok")
             return redirect(url_for("manage_files", instructor_id=instructor.id))
 
+        flash("Unknown action.", "bad")
         return redirect(url_for("manage_files", instructor_id=instructor.id))
 
     files = (
@@ -2247,16 +2082,13 @@ def manage_files(instructor_id: int):
         .order_by(InstructorFile.uploaded_at.desc())
         .all()
     )
-
+    common_files = get_common_filenames()
     return render_template_string(
         TEMPLATE_MANAGE_FILES,
         instructor=instructor,
         files=files,
+        common_files=common_files,
     )
-
-
-
-
 
 
 @app.route("/admin/instructors")
